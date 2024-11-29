@@ -1,0 +1,11 @@
+Resources
+| where type == "microsoft.storage/storageaccounts"
+| extend encryptionType = tostring(properties.encryption.keySource)
+| where encryptionType == "Microsoft.Keyvault"  
+| join kind=leftouter (ResourceContainers 
+    | where type == "microsoft.resources/subscriptions/resourcegroups" 
+    | extend businessUnit = tostring(tags['BusinessUnit'])
+    | project businessUnit, resourceGroup
+  ) on resourceGroup
+//   | where isnotempty(businessUnit)  
+  | summarize count() by businessUnit

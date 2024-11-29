@@ -1,0 +1,31 @@
+"then": {
+  "effect": "modify",
+  "details": {
+    "roleDefinitionIds": [
+      "/providers/Microsoft.Authorization/roleDefinitions/contributor"
+    ],
+    "operations": [
+      {
+        "operation": "addOrReplace",
+        "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
+        "value": "Deny"
+      }
+    ],
+    "condition": {
+      "allOf": [
+        {
+          "field": "Microsoft.Network/networkSecurityGroups/securityRules/protocol",
+          "equals": "Udp"
+        },
+        {
+          "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
+          "equals": "Inbound"
+        },
+        {
+          "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
+          "equals": "Allow"
+        }
+      ]
+    }
+  }
+}

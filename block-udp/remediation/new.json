@@ -1,0 +1,39 @@
+{
+  "parameters": {
+    "blockedports": {
+      "type": "array",
+      "metadata": {
+        "description": "Array of blocked management ports",
+        "displayName": "Blocked Ports"
+      },
+      "defaultValue": [
+        22,
+        3389,
+        1433
+      ]
+    }
+  },
+  "policyRule": {
+    "if": {
+      "anyOf": [
+        {
+          "value": "[and( contains(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange'), '-'), greater( length(intersection( range( int(first(split(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange'), '-'))), add( sub( int(last(split(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange'), '-'))), int(first(split(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange'), '-')))), 1)), parameters('destinationPortRange'))), 0))]",
+          "equals": "true"
+        },
+        {
+          "count": {
+            "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+            "where": {
+              "value": "[and( contains(first(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]')), '-'), greater( length(intersection( range( int(first(split(first(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]')), '-'))), add( sub( int(last(split(first(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]')), '-'))), int(first(split(first(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]')), '-')))), 1)), parameters('destinationPortRange'))), 0))]",
+              "equals": "true"
+            }
+          },
+          "greater": 0
+        }
+      ]
+    },
+    "then": {
+      "effect": "Deny"
+    }
+  }
+}

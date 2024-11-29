@@ -1,0 +1,48 @@
+{
+  "properties": {
+    "displayName": "Prevent specific port range in NSG",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "This policy prevents NSG rules from allowing traffic in the port range 1000-2000.",
+    "parameters": {},
+    "policyRule": {
+      "if": {
+        "anyOf": [
+          {
+            "allOf": [
+              {
+                "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
+                "contains": "-"
+              },
+              {
+                "value": "[and(lessOrEquals(int(first(split(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange'), '-'))), 2000), greaterOrEquals(int(last(split(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange'), '-'))), 1000))]",
+                "equals": "true"
+              }
+            ]
+          },
+          {
+            "count": {
+              "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+              "where": {
+                "allOf": [
+                  {
+                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                    "contains": "-"
+                  },
+                  {
+                    "value": "[and(lessOrEquals(int(first(split(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]'), '-'))), 2000), greaterOrEquals(int(last(split(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]'), '-'))), 1000))]",
+                    "equals": "true"
+                  }
+                ]
+              }
+            },
+            "greater": 0
+          }
+        ]
+      },
+      "then": {
+        "effect": "Deny"
+      }
+    }
+  }
+}

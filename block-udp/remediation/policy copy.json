@@ -1,0 +1,88 @@
+{
+    "properties": {
+        "displayName": "UDP Traffic Block",
+        "policyType": "Custom",
+        "mode": "All",
+        "description": "Configurable policy to block UDP traffic",
+        "parameters": {
+            "destinationPortRange": {
+                "type": "array",
+                "defaultValue": [
+                    "*",
+                    "53",
+                    "123",
+                    "161",
+                    "389",
+                    "1900"
+                ],
+                "metadata": {
+                    "description": "Specify the UDP destination ports to block. Allowed values: all ports ('*') or a specific list of ports.",
+                    "displayName": "UDP Destination Ports to Block"
+                }
+            }
+        },
+        "policyRule": {
+            "if": {
+                "allOf": [
+                    {
+                        "field": "type",
+                        "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
+                    },
+                    {
+                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/protocol",
+                        "equals": "Udp"
+                    },
+                    {
+                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
+                        "equals": "Inbound"
+                    },
+                    {
+                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
+                        "equals": "Allow"
+                    },
+                    {
+                        "anyOf": [
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
+                                "in": "[parameters('destinationPortRange')]"
+                            },
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                "in": "[parameters('destinationPortRange')]"
+                            },
+                            {
+                                "equals": "true",
+                                "value": "[and(and(not(empty(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange'))), contains(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange'),'-')), greater(length(intersection(range(int(first(split(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange'), '-'))), sub(int(last(split(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange'), '-'))), int(first(split(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange'), '-'))))), parameters('destinationPortRange'))),0))]"
+                            }
+                        ]
+                    },
+                    {
+                        "anyOf": [
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefix",
+                                "in": [
+                                    "*",
+                                    "0.0.0.0/0",
+                                    "Internet",
+                                    "Any"
+                                ]
+                            },
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefixes[*]",
+                                "in": [
+                                    "*",
+                                    "0.0.0.0/0",
+                                    "Internet",
+                                    "Any"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "then": {
+                "effect": "Deny"
+            }
+        }
+    }
+}

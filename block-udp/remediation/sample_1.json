@@ -1,0 +1,122 @@
+{
+  "properties": {
+    "displayName": "Configurable UDP Traffic Block Policy with Block and Remediation",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "This policy blocks the creation of new non-compliant rules and adds deny rules to remediate existing NSG rules that allow UDP traffic for configurable ports and source prefixes.",
+    "parameters": {
+      "destinationPortRange": {
+        "type": "array",
+        "defaultValue": ["*"],
+        "allowedValues": [
+          ["*"],
+          ["53", "123", "161", "389", "1900"]
+        ],
+        "metadata": {
+          "description": "Specify the UDP destination ports to block. Allowed values: all ports ('*') or a specific list of ports.",
+          "displayName": "UDP Destination Ports to Block"
+        }
+      },
+      "sourceAddressPrefix": {
+        "type": "array",
+        "defaultValue": ["*"],
+        "allowedValues": [
+          ["*"],
+          ["0.0.0.0/0"],
+          ["Internet"]
+        ],
+        "metadata": {
+          "description": "Specify the source address prefixes to block. Allowed values: all ('*'), all IPv4 traffic ('0.0.0.0/0'), public IPs ('Internet'), or specific private IP ranges.",
+          "displayName": "Source Address Prefixes to Block"
+        }
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
+          },
+          {
+            "field": "Microsoft.Network/networkSecurityGroups/securityRules/protocol",
+            "equals": "Udp"
+          },
+          {
+            "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
+            "equals": "Inbound"
+          },
+          {
+            "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
+            "in": "[parameters('destinationPortRange')]"
+          },
+          {
+            "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefix",
+            "in": "[parameters('sourceAddressPrefix')]"
+          },
+          {
+            "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
+            "equals": "Allow"
+          }
+        ]
+      },
+      "then": [
+        {
+          "effect": "Deny"
+        },
+
+        {
+          "effect": "deployIfNotExists",
+          "details": {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "roleDefinitionIds": [
+              "/providers/Microsoft.Authorization/roleDefinitions/contributor"
+            ],
+            "existenceCondition": {
+              "allOf": [
+                {
+                  "field": "Microsoft.Network/networkSecurityGroups/securityRules/protocol",
+                  "equals": "Udp"
+                },
+                {
+                  "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
+                  "equals": "Inbound"
+                },
+                {
+                  "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
+                  "equals": "Deny"
+                }
+              ]
+            },
+            "deployment": {
+              "properties": {
+                "mode": "incremental",
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+                      "apiVersion": "2021-05-01",
+                      "name": "Deny-UDP-Traffic",
+                      "properties": {
+                        "priority": 100,
+                        "protocol": "Udp",
+                        "sourcePortRange": "*",
+                        "destinationPortRange": "[parameters('destinationPortRange')]",
+                        "sourceAddressPrefix": "[parameters('sourceAddressPrefix')]",
+                        "direction": "Inbound",
+                        "access": "Deny"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+
+      ]
+    }
+  }
+}
