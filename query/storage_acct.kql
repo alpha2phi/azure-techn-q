@@ -9,3 +9,4 @@ Resources
   ) on resourceGroup
 //   | where isnotempty(businessUnit)  
   | summarize count() by businessUnit
+  | order by businessUnit asc
