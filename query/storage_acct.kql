@@ -2,7 +2,7 @@ Resources
 | where type == "microsoft.storage/storageaccounts"
 | extend encryptionType = tostring(properties.encryption.keySource)
 | where encryptionType == "Microsoft.Keyvault"  
-| join kind=leftouter (ResourceContainers 
+| join kind=inner (ResourceContainers 
     | where type == "microsoft.resources/subscriptions/resourcegroups" 
     | extend businessUnit = tostring(tags['BusinessUnit'])
     | project businessUnit, resourceGroup

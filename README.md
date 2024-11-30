@@ -3,6 +3,8 @@ Azure policy implementation
 
 ## Block UDP Traffic
 
+* [Azure Policy definition structure basiscs](https://learn.microsoft.com/en-us/azure/governance/policy/concepts/definition-structure-basics)
+
 | Protocol | Port | Service      |
 |----------|------|--------------|
 | UDP      | 52   | DNS          |
@@ -13,6 +15,8 @@ Azure policy implementation
 
 ## Kusto
 
+* [Advanced query samples](https://learn.microsoft.com/en-us/azure/governance/resource-graph/samples/advanced?tabs=azure-cli)
+* [Resource graph tables](https://learn.microsoft.com/en-us/azure/governance/resource-graph/concepts/query-language#resource-graph-tables)
 * [KQL Overview](https://learn.microsoft.com/en-us/kusto/query/?view=microsoft-fabric)
 
 
