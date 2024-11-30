@@ -4,7 +4,7 @@ param (
 )
 
 # Login to Azure
-# Connect-AzAccount
+Connect-AzAccount
 
 # Set the subscription context
 Set-AzContext -SubscriptionName $SubscriptionName
@@ -98,7 +98,8 @@ foreach ($keyVault in $keyVaults) {
 
             $currentSecret = Get-AzKeyVaultSecret -VaultName $keyVault.VaultName -Name $secret.Name 
             Write-Host "Setting expiration for secret: $($secret.Name) to $expirationDate" -ForegroundColor Cyan
-            Set-AzKeyVaultSecret -VaultName $keyVault.VaultName -Name $secret.Name -Expires $expirationDate -SecretValue $currentSecret.SecretValue
+            # Preserve original values
+            Set-AzKeyVaultSecret -VaultName $keyVault.VaultName -Name $secret.Name -Expires $expirationDate -SecretValue $currentSecret.SecretValue -ContentType $currentSecret.ContentType -Tag $currentSecret.Tags -NotBefore $currentSecret.NotBefore
             Write-Host "Expiration date for secret '$($secret.Name)': $expirationDate" -ForegroundColor Green
         }
     }
