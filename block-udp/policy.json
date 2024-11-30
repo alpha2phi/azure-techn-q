@@ -75,15 +75,15 @@
                             {
                                 "anyOf": [
                                     {
-                                        "value": "[contains(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange'), '-')]",
-                                        "equals": "true"
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
+                                        "contains": "-"
                                     },
                                     {
                                         "count": {
                                             "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
                                             "where": {
-                                                "value": "[contains(field('Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]'), '-')]",
-                                                "equals": "true"
+                                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                                "contains": "-"
                                             }
                                         },
                                         "greater": 0
@@ -99,8 +99,14 @@
                                 "in": "[parameters('sourceAddressPrefix')]"
                             },
                             {
-                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefixes[*]",
-                                "in": "[parameters('sourceAddressPrefix')]"
+                                "count": {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefixes[*]",
+                                    "where": {
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefixes[*]",
+                                        "in": "[parameters('sourceAddressPrefix')]"
+                                    }
+                                },
+                                "greater": 0
                             }
                         ]
                     }
