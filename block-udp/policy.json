@@ -43,7 +43,10 @@
                     },
                     {
                         "field": "Microsoft.Network/networkSecurityGroups/securityRules/protocol",
-                        "equals": "Udp"
+                        "in": [
+                            "Udp",
+                            "*"
+                        ]
                     },
                     {
                         "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
