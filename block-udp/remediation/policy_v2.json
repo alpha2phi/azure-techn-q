@@ -1,0 +1,242 @@
+{
+    "properties": {
+        "displayName": "UDP Traffic Block",
+        "policyType": "Custom",
+        "mode": "All",
+        "description": "Configurable policy to block UDP traffic with remediation for existing rules",
+        "parameters": {
+            "destinationPortRange": {
+                "type": "array",
+                "defaultValue": [
+                    "*",
+                    "53",
+                    "123",
+                    "161",
+                    "389",
+                    "1900"
+                ],
+                "metadata": {
+                    "description": "Specify the UDP destination ports to block",
+                    "displayName": "UDP Destination Ports to Block"
+                }
+            },
+            "sourceAddressPrefix": {
+                "type": "array",
+                "defaultValue": [
+                    "*",
+                    "0.0.0.0/0",
+                    "Internet",
+                    "Any"
+                ],
+                "metadata": {
+                    "description": "Specify the source address prefixes to block.",
+                    "displayName": "Source Address Prefixes to Block"
+                }
+            }
+        },
+        "policyRule": {
+            "if": {
+                "allOf": [
+                    {
+                        "field": "type",
+                        "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
+                    },
+                    {
+                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/protocol",
+                        "in": [
+                            "Udp",
+                            "*"
+                        ]
+                    },
+                    {
+                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
+                        "equals": "Inbound"
+                    },
+                    {
+                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
+                        "equals": "Allow"
+                    },
+                    {
+                        "anyOf": [
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
+                                "in": "[parameters('destinationPortRange')]"
+                            },
+                            {
+                                "count": {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                    "where": {
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                        "in": "[parameters('destinationPortRange')]"
+                                    }
+                                },
+                                "greater": 0
+                            },
+                            {
+                                "anyOf": [
+                                    {
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
+                                        "contains": "-"
+                                    },
+                                    {
+                                        "count": {
+                                            "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                            "where": {
+                                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                                "contains": "-"
+                                            }
+                                        },
+                                        "greater": 0
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "anyOf": [
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefix",
+                                "in": "[parameters('sourceAddressPrefix')]"
+                            },
+                            {
+                                "count": {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefixes[*]",
+                                    "where": {
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefixes[*]",
+                                        "in": "[parameters('sourceAddressPrefix')]"
+                                    }
+                                },
+                                "greater": 0
+                            }
+                        ]
+                    }
+                ]
+            },
+            "then": {
+                "effect": "Deny"
+            }
+        },
+        "policyDefinitions": [
+            {
+                "policyDefinitionId": "[resourceId('Microsoft.Authorization/policyDefinitions', 'udp-traffic-block-remediation')]",
+                "policyType": "Custom",
+                "definitionVersion": "1.0.0",
+                "displayName": "Remediate UDP Traffic Allow Rules",
+                "description": "Deploys a rule to block UDP traffic for existing network security groups",
+                "mode": "All",
+                "parameters": {
+                    "destinationPortRange": {
+                        "type": "array",
+                        "defaultValue": [
+                            "*",
+                            "53",
+                            "123",
+                            "161",
+                            "389",
+                            "1900"
+                        ]
+                    }
+                },
+                "policyRule": {
+                    "if": {
+                        "allOf": [
+                            {
+                                "field": "type",
+                                "equals": "Microsoft.Network/networkSecurityGroups"
+                            },
+                            {
+                                "count": {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules[*]",
+                                    "where": {
+                                        "allOf": [
+                                            {
+                                                "field": "Microsoft.Network/networkSecurityGroups/securityRules[*].protocol",
+                                                "in": [
+                                                    "Udp",
+                                                    "*"
+                                                ]
+                                            },
+                                            {
+                                                "field": "Microsoft.Network/networkSecurityGroups/securityRules[*].direction",
+                                                "equals": "Inbound"
+                                            },
+                                            {
+                                                "field": "Microsoft.Network/networkSecurityGroups/securityRules[*].access",
+                                                "equals": "Allow"
+                                            },
+                                            {
+                                                "anyOf": [
+                                                    {
+                                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules[*].destinationPortRange",
+                                                        "in": "[parameters('destinationPortRange')]"
+                                                    },
+                                                    {
+                                                        "count": {
+                                                            "field": "Microsoft.Network/networkSecurityGroups/securityRules[*].destinationPortRanges[*]",
+                                                            "where": {
+                                                                "field": "Microsoft.Network/networkSecurityGroups/securityRules[*].destinationPortRanges[*]",
+                                                                "in": "[parameters('destinationPortRange')]"
+                                                            }
+                                                        },
+                                                        "greater": 0
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                },
+                                "greater": 0
+                            }
+                        ]
+                    },
+                    "then": {
+                        "effect": "DeployIfNotExists",
+                        "details": {
+                            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+                            "name": "block-udp-traffic",
+                            "roleDefinitionIds": [
+                                "/providers/Microsoft.Authorization/roleDefinitions/4d97b98b-1d4f-4787-a291-c67834d212e7"
+                            ],
+                            "deployment": {
+                                "properties": {
+                                    "mode": "Incremental",
+                                    "template": {
+                                        "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                                        "contentVersion": "1.0.0.0",
+                                        "parameters": {
+                                            "networkSecurityGroupName": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "resources": [
+                                            {
+                                                "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+                                                "apiVersion": "2020-06-01",
+                                                "name": "[concat(parameters('networkSecurityGroupName'), '/block-udp-traffic')]",
+                                                "properties": {
+                                                    "protocol": "Udp",
+                                                    "sourceAddressPrefix": "*",
+                                                    "destinationAddressPrefix": "*",
+                                                    "access": "Deny",
+                                                    "destinationPortRange": "*",
+                                                    "sourcePortRange": "*",
+                                                    "priority": 100,
+                                                    "direction": "Inbound"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    "parameters": {
+                                        "networkSecurityGroupName": {
+                                            "value": "[field('name')]"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
