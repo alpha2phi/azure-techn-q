@@ -188,7 +188,7 @@
                             },
                             "parameters": {
                                 "nsgName": {
-                                    "value": "[field('name')]"
+                                    "value": "[split(field('id'), '/')[8]]"
                                 },
                                 "securityRuleName": {
                                     "value": "[parameters('securityRuleName')]"
