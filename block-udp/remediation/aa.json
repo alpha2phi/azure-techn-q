@@ -1,0 +1,141 @@
+{
+    "properties": {
+        // Basic policy metadata
+        "displayName": "UDP Traffic Block",
+        "policyType": "Custom",
+        "mode": "All",
+        "description": "Configurable policy to block UDP traffic on Network Security Groups",
+
+        // Policy parameters that can be customized during assignment
+        "parameters": {
+            // Configurable destination ports to block
+            "destinationPortRange": {
+                "type": "array",
+                "defaultValue": [
+                    "*",
+                    "53",
+                    "123",
+                    "161",
+                    "389",
+                    "1900"
+                ],
+                "metadata": {
+                    "description": "Specify the UDP destination ports to block",
+                    "displayName": "UDP Destination Ports to Block"
+                }
+            },
+            // Configurable source address prefixes to block
+            "sourceAddressPrefix": {
+                "type": "array",
+                "defaultValue": [
+                    "*",
+                    "0.0.0.0/0",
+                    "Internet",
+                    "Any"
+                ],
+                "metadata": {
+                    "description": "Specify the source address prefixes to block.",
+                    "displayName": "Source Address Prefixes to Block"
+                }
+            },
+            // Additional parameter for security rule name
+            "securityRuleName": {
+                "type": "string",
+                "defaultValue": "Deny-UDP-Traffic",
+                "metadata": {
+                    "description": "Name of the security rule to be created",
+                    "displayName": "Security Rule Name"
+                }
+            }
+        },
+
+        // The core policy rule definition
+        "policyRule": {
+            // Conditions that must be met for the policy to be applied
+            "if": {
+                "allOf": [
+                    // Target only Network Security Groups
+                    {
+                        "field": "type",
+                        "equals": "Microsoft.Network/networkSecurityGroups"
+                    },
+                    // Exclude global resources
+                    {
+                        "field": "location",
+                        "notEquals": "global"
+                    }
+                ]
+            },
+            "then": {
+                "effect": "DeployIfNotExists",
+                "details": {
+                    "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+                    "name": "[parameters('securityRuleName')]",
+                    "roleDefinitionIds": [
+                        "/providers/Microsoft.Authorization/roleDefinitions/4d97b98b-1d4f-4787-a291-c67834d212e7"
+                    ],
+                    "existenceCondition": {
+                        "allOf": [
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/protocol",
+                                "equals": "Udp"
+                            },
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
+                                "equals": "Deny"
+                            },
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
+                                "equals": "Inbound"
+                            }
+                        ]
+                    },
+                    "deployment": {
+                        "properties": {
+                            "mode": "incremental",
+                            "template": {
+                                "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                                "contentVersion": "1.0.0.0",
+                                "parameters": {
+                                    "nsgName": {
+                                        "type": "string"
+                                    },
+                                    "securityRuleName": {
+                                        "type": "string"
+                                    }
+                                },
+                                "resources": [
+                                    {
+                                        "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+                                        "apiVersion": "2020-06-01",
+                                        "name": "[concat(parameters('nsgName'), '/', parameters('securityRuleName'))]",
+                                        "properties": {
+                                            "protocol": "Udp",
+                                            "sourceAddressPrefix": "*",
+                                            "destinationAddressPrefix": "*",
+                                            "access": "Deny",
+                                            "destinationPortRange": "*",
+                                            "sourcePortRange": "*",
+                                            "priority": 100,
+                                            "direction": "Inbound"
+                                        }
+                                    }
+                                ],
+                                "outputs": {}
+                            },
+                            // Parameters passed to the deployment template
+                            "parameters": {
+                                "nsgName": {
+                                    "value": "[field('name')]"
+                                },
+                                "securityRuleName": {
+                                    "value": "[parameters('securityRuleName')]"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
