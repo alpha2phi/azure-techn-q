@@ -124,9 +124,30 @@
                 "effect": "DeployIfNotExists",
                 "details": {
                     "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+                    "name": "[parameters('securityRuleName')]",
                     "roleDefinitionIds": [
                         "/providers/Microsoft.Authorization/roleDefinitions/4d97b98b-1d4f-4787-a291-c67834d212e7"
                     ],
+                    "existenceCondition": {
+                        "allOf": [
+                            {
+                                "field": "name",
+                                "equals": "[parameters('securityRuleName')]"
+                            },
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/protocol",
+                                "equals": "Udp"
+                            },
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
+                                "equals": "Deny"
+                            },
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
+                                "equals": "Inbound"
+                            }
+                        ]
+                    },
                     "deployment": {
                         "properties": {
                             "mode": "incremental",
@@ -135,22 +156,17 @@
                                 "contentVersion": "1.0.0.0",
                                 "parameters": {
                                     "nsgName": {
-                                        "type": "string",
-                                        "metadata": {
-                                            "description": "The name of the NSG where the rule will be added.",
-                                            "displayName": "Network Security Group Name"
-                                        }
+                                        "type": "string"
                                     },
                                     "securityRuleName": {
-                                        "type": "string",
-                                        "defaultValue": "Deny-UDP-Traffic"
+                                        "type": "string"
                                     }
                                 },
                                 "resources": [
                                     {
                                         "type": "Microsoft.Network/networkSecurityGroups/securityRules",
                                         "apiVersion": "2020-06-01",
-                                        "name": "[parameters('securityRuleName')]",
+                                        "name": "[concat(parameters('nsgName'), '/', parameters('securityRuleName'))]",
                                         "properties": {
                                             "protocol": "Udp",
                                             "sourceAddressPrefix": "*",
@@ -162,14 +178,15 @@
                                             "direction": "Inbound"
                                         }
                                     }
-                                ]
+                                ],
+                                "outputs": {}
                             },
                             "parameters": {
                                 "nsgName": {
                                     "value": "[field('name')]"
                                 },
                                 "securityRuleName": {
-                                    "value": "Deny-UDP-Traffic"
+                                    "value": "[parameters('securityRuleName')]"
                                 }
                             }
                         }
