@@ -1,14 +1,10 @@
 {
     "properties": {
-        // Basic policy metadata
         "displayName": "UDP Traffic Block",
         "policyType": "Custom",
         "mode": "All",
-        "description": "Configurable policy to block UDP traffic on Network Security Groups",
-
-        // Policy parameters that can be customized during assignment
+        "description": "Configurable policy to block UDP traffic",
         "parameters": {
-            // Configurable destination ports to block
             "destinationPortRange": {
                 "type": "array",
                 "defaultValue": [
@@ -24,7 +20,6 @@
                     "displayName": "UDP Destination Ports to Block"
                 }
             },
-            // Configurable source address prefixes to block
             "sourceAddressPrefix": {
                 "type": "array",
                 "defaultValue": [
@@ -38,31 +33,90 @@
                     "displayName": "Source Address Prefixes to Block"
                 }
             },
-            // Additional parameter for security rule name
             "securityRuleName": {
                 "type": "string",
-                "defaultValue": "Deny-UDP-Traffic",
+                "defaultValue": "DenyUDPTraffic",
                 "metadata": {
                     "description": "Name of the security rule to be created",
                     "displayName": "Security Rule Name"
                 }
             }
         },
-
-        // The core policy rule definition
         "policyRule": {
-            // Conditions that must be met for the policy to be applied
             "if": {
                 "allOf": [
-                    // Target only Network Security Groups
                     {
                         "field": "type",
-                        "equals": "Microsoft.Network/networkSecurityGroups"
+                        "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
                     },
-                    // Exclude global resources
                     {
-                        "field": "location",
-                        "notEquals": "global"
+                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/protocol",
+                        "in": [
+                            "Udp",
+                            "*"
+                        ]
+                    },
+                    {
+                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
+                        "equals": "Inbound"
+                    },
+                    {
+                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
+                        "equals": "Allow"
+                    },
+                    {
+                        "anyOf": [
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
+                                "in": "[parameters('destinationPortRange')]"
+                            },
+                            {
+                                "count": {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                    "where": {
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                        "in": "[parameters('destinationPortRange')]"
+                                    }
+                                },
+                                "greater": 0
+                            },
+                            {
+                                "anyOf": [
+                                    {
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
+                                        "contains": "-"
+                                    },
+                                    {
+                                        "count": {
+                                            "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                            "where": {
+                                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                                "contains": "-"
+                                            }
+                                        },
+                                        "greater": 0
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "anyOf": [
+                            {
+                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefix",
+                                "in": "[parameters('sourceAddressPrefix')]"
+                            },
+                            {
+                                "count": {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefixes[*]",
+                                    "where": {
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefixes[*]",
+                                        "in": "[parameters('sourceAddressPrefix')]"
+                                    }
+                                },
+                                "greater": 0
+                            }
+                        ]
                     }
                 ]
             },
@@ -72,10 +126,19 @@
                     "type": "Microsoft.Network/networkSecurityGroups/securityRules",
                     "name": "[parameters('securityRuleName')]",
                     "roleDefinitionIds": [
-                        "/providers/Microsoft.Authorization/roleDefinitions/4d97b98b-1d4f-4787-a291-c67834d212e7"
+                        "/providers/Microsoft.Authorization/roleDefinitions/4d97b98b-1d4f-4787-a291-c67834d212e7",
+                        "/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
                     ],
                     "existenceCondition": {
                         "allOf": [
+                            {
+                                "field": "type",
+                                "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
+                            },
+                            {
+                                "field": "name",
+                                "equals": "[concat(field('name'), '/', parameters('securityRuleName'))]"
+                            },
                             {
                                 "field": "Microsoft.Network/networkSecurityGroups/securityRules/protocol",
                                 "equals": "Udp"
@@ -107,14 +170,14 @@
                                 "resources": [
                                     {
                                         "type": "Microsoft.Network/networkSecurityGroups/securityRules",
-                                        "apiVersion": "2020-06-01",
+                                        "apiVersion": "2021-05-01",
                                         "name": "[concat(parameters('nsgName'), '/', parameters('securityRuleName'))]",
                                         "properties": {
                                             "protocol": "Udp",
-                                            "sourceAddressPrefix": "*",
                                             "destinationAddressPrefix": "*",
                                             "access": "Deny",
                                             "destinationPortRange": "*",
+                                            "sourceAddressPrefix": "*",
                                             "sourcePortRange": "*",
                                             "priority": 100,
                                             "direction": "Inbound"
@@ -123,7 +186,6 @@
                                 ],
                                 "outputs": {}
                             },
-                            // Parameters passed to the deployment template
                             "parameters": {
                                 "nsgName": {
                                     "value": "[field('name')]"
